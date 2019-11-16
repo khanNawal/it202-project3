@@ -1,0 +1,221 @@
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Old Nokia Mobile Game</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+    </head>
+<body>
+
+<canvas id="CanvasAnimation" width="1000" height="600" style="border:1px solid #d3d3d3;"> </canvas>
+ <div> 
+  
+  
+  </div>
+<script>
+const c = document.getElementById("CanvasAnimation");
+const ctx = c.getContext("2d");
+ 
+  
+  const background = new Image();
+  
+
+var playerImg = new Image();
+var harm = new Image();  
+var benefit = new Image();    
+  
+background.src = "backpic.jpg";
+playerImg.src = "playermages.jpg";
+harm.src = "harm.jpg";
+benefit.src = "berefit.jpg";  
+  
+ctx.font = "Italic 40px Comic Sans MS";
+ctx.fillStyle = "blue";
+ctx.textAlign = "center";
+  
+  
+let game = {score: 0, lives: 3, state: "play", level: 1, armor: false};
+let gameObjects = [];
+gameObjects.push({type: "player" , x:20, y:c.height/2, r:15, color:"purple", speed:1});
+gameObjects.push({type: "harm", x:500, y:Math.floor(Math.random() * 200), r:10, color:"red", speed:1});
+gameObjects.push({type: "benefit", x:500, y:Math.floor(Math.random() * 200), r:20, color:"green", speed:1});
+let player = gameObjects[0];
+  
+
+  
+function draw() {
+  // clear canvas
+  ctx.clearRect(0,0,c.width, c.height);
+  ctx.drawImage(background, 0, 0, 1000, 600);
+  // draw objects
+  
+  ctx.drawImage(playerImg, 20, 20, 100,100);
+//   ctx.drawImage(harm, 20, 20, 60,60);
+//   ctx.drawImage(benefit, 20, 20, 60,60);
+  
+  for (theObject in gameObjects) {
+    p = gameObjects[theObject];
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, 2 * Math.PI);
+    ctx.fillStyle = p.color;
+    ctx.fill();
+     
+    
+    if (p.type != "player") {
+      p.x -= p.speed * game.level;
+      if (colliding(player,p)) {
+        if (p.type == "harm") {
+            if (game.armor === true) {
+                game.armor = false
+            } 
+          else { game.lives -- }
+        } 
+        else
+        if (p.type == "benefit" || 'life' || 'armor'){
+          if (p.type === 'armor') {
+              game.armor = true
+              gameObjects = gameObjects.filter(item => item.type !== 'armor');
+          } 
+          else {
+            if (p.type === 'life') {
+                game.lives ++
+            }
+            game.score += 500;   
+            
+            if (game.score % 500 == 0) {
+                game.level ++;
+                
+                if (game.level % 2 == 0) {
+                    gameObjects.push({type: "harm", x:500, y:Math.floor(Math.random() * 200), r:10, color:"red", speed:1});
+                }
+                if (game.level % 5 == 0) {
+                    gameObjects.push({type: "life", x:500, y:Math.floor(Math.random() * 200), r:20, color:"green", speed:1});
+                }
+                if (game.level % 5 !== 0) {
+                    gameObjects = gameObjects.filter(item => item.type !== 'life');
+                }
+                if (game.level % 3 == 0) {
+                    gameObjects.push({type: "armor", x:500, y:Math.floor(Math.random() * 200), r:5, color:"blue", speed:1});
+                }
+                if (game.level % 3 !== 0 || game.armor === true) {
+                    gameObjects = gameObjects.filter(item => item.type !== 'armor');
+                }
+          }
+            
+          }
+        }
+        // console.log(game);
+        
+        p.state = "collision"
+      }
+      
+      if ( (p.x + p.r < 0)  || p.state == "collision") {
+          p.x = c.width + p.r;
+          p.y = Math.random() * (c.height - 0) + 0;
+          p.state = "";
+        } 
+    }
+  }
+  
+  // draw text
+  ctx.fillText(`Score: ${game.score} - Lives: ${game.lives} - Level: ${game.level} - Armor: ${game.armor ? 'On' : 'Off'}`, c.width/2, 30); 
+  
+  // next frame
+  if (game.lives > 0) {
+    window.requestAnimationFrame (draw);
+  } 
+  else {
+    gameOver();
+  }
+  
+}
+  
+function togglePauseGame() {
+    for (x of gameObjects) {
+        if (x.speed > 0) {
+            x.speed = 0
+            
+        } else {
+            x.speed = 1
+            player.speed = 20
+        }
+    }
+}
+  
+function gameOver() {
+  ctx.clearRect(0,0,c.width, c.height);
+  ctx.drawImage(background, 0, 0, 1000, 600);
+  ctx.fillText("Game Over", c.width/2, c.height/2);
+}
+  
+window.requestAnimationFrame (draw);
+  
+function colliding (circle1, circle2) {
+  let result = false;
+  
+  
+  let dx = circle1.x - circle2.x;
+  let dy = circle1.y - circle2.y;
+  
+  let distance = Math.sqrt(dx * dx + dy * dy);
+  if (distance < circle1.r + circle2.r){
+     
+    // collision detected!
+      result = true;
+  }
+  
+  return result;
+}
+  
+document.onkeydown = checkKey;
+function checkKey(e) {
+    e = e || window.event;
+    // console.log(e);
+    if (e.keyCode == '38') {
+        // up arrow
+        player.y -= player.speed;
+    }
+    else if (e.keyCode == '40') {
+        // down arrow
+        player.y += player.speed;
+    }
+    else if (e.keyCode == '37') {
+       // left arrow
+       togglePauseGame()
+    }
+    else if (e.keyCode == '39') {
+       // right arrow
+       game.level ++
+       game.score += 100
+    }
+}
+  
+  function trackKeys(keys) {
+  let down = Object.create(null);
+  function track(event) {
+    if (keys.includes(event.key)) {
+      down[event.key] = event.type == "keydown";
+      event.preventDefault();
+    }
+  }
+  window.addEventListener("keydown", track);
+  window.addEventListener("keyup", track);
+  return down;
+}
+
+const arrowKeys =
+  trackKeys(["ArrowLeft", "ArrowRight", "ArrowUp"]);
+  
+</script> 
+
+</body>
+</html> 
+
+
+
+
+
+
+
+
